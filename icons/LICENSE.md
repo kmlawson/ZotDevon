@@ -1,9 +1,19 @@
-Copyright © 2013 Konrad M. Lawson
+Zotero is Copyright © 2006, 2007, 2008, 2009, 2010, 2011
+Center for History and New Media, George Mason University,
+Fairfax, Virginia, USA  http://zotero.org
 
-Enclosed Zotero icons Copyright © 2006, 2007, 2008, 2009, 2010, 2011
-Center for History and New Media, George Mason University
-See enclosed license in /icons/
+The Center for History and New Media distributes the Zotero source code
+under the GNU Affero General Public License, version 3 (AGPLv3). The full text
+of this license is given below.
 
+The Zotero name is a registered trademark of George Mason University.
+See http://zotero.org/trademark for more information.
+
+Third-party copyright in this distribution is noted where applicable.
+
+All rights not expressly granted are reserved.
+
+=========================================================================
 
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
