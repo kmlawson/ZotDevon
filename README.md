@@ -60,10 +60,6 @@ ZotDevon is free and open source. Improvements are welcome.
 
 Open Activity Monitor in your Utilities folder, search for ASOBjC Runner, and force quit it.
 
-**I Want to Reimport Everything From Scratch**
-
-Delete or move the imported folders in DEVONthink, and then empty the "keys.txt" file in the ZotDevon folder. Then run the import again.
-
 **I See Weird Behavior After Canceling and Restarting ZotDevon**
 
 Currently ZotDevon has an AppleScript which calls a Ruby script. When the AppleScript is cancelled before import is complete, the Ruby script findnew.rb continue to download the updates. The script should ideally be improved to keep track of the process number of the launched Ruby script and shut it down in event of cancellation. Until this is incorporated, you will need to either wait for the import script to complete of its own accord before restarting, or open Activity Monitor, search for Ruby and force quit the ruby script running. If there are multiple ruby scripts running on your computer, inspect the process to determine what is what. 
