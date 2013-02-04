@@ -70,3 +70,5 @@ If there are problems with the import first try running the script again. It cou
 
 If you want to start completely over, delete the keys.txt, and if you see it, the new.txt and any _backup.txt files in your ZotDevon folder. Then run the script again.
 
+Created By: [Konrad M. Lawson](http://muninn.net/)
+
