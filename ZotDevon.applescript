@@ -9,8 +9,6 @@ set newFile to "new.txt"
 -- 2. Title - Author
 set formatOrder to 1
 
-
-
 --if you are debugging or have run the findnew.rb script already, set skipscript to one
 --to jump directly to the DevonThink import process. Leave as 0 otherwise.
 set skipScript to 0
@@ -90,17 +88,29 @@ if skipScript is not 1 then
 	end if
 	
 	--check to see if there are leftover backup files and use them if there are
-	if existsFile(workFolder & "keys_backup.txt") then
-		set myanswer to display dialog "The last sync was aborted. The script will proceed with the pre-sync backup list of items."
-		if the button returned of myanswer is "OK" then
-			set a to do shell script "mv '" & workFolder & "keys_backup.txt' '" & workFolder & "keys.txt'"
+	if existsFile(workFolder & "keys_backup.txt") or existsFile(workFolder & "new.txt") then
+		set myanswer to display dialog "The last sync did not complete. Do you wish to cancel, look for a backup of pre-import list of entries and ignore any downloaded entries, or first just import already downloaded items and cleanup (You can sync again afterwards)." buttons {"Cancel", "Look for Backup", "Import Downloaded Entries"} default button 3 cancel button 1
+		if the button returned of myanswer is "Look for Backup" then
+			if existsFile(workFolder & "keys_backup.txt") then
+				set a to do shell script "mv '" & workFolder & "keys_backup.txt' '" & workFolder & "keys.txt'"
+			end if
 			if existsFile(workFolder & "lastupdate.txt") then
 				set b to do shell script "mv '" & workFolder & "lastupdate_backup.txt' '" & workFolder & "lastupdate.txt'"
 			end if
+		else if the button returned of myanswer is "Import Downloaded Entries" then
+			if existsFile(workFolder & "keys_backup.txt") then
+				set a to do shell script "rm '" & workFolder & "keys_backup.txt'"
+			end if
+			if existsFile(workFolder & "lastupdate_backup.txt") then
+				set a to do shell script "rm '" & workFolder & "lastupdate_backup.txt'"
+			end if
+			set skipScript to 1
 		end if
 	end if
-	
-	
+end if
+
+
+if skipScript is not 1 then
 	--make a copy of our list of database keys in case something goes wrong during sync
 	set y to do shell script "cp '" & workFolder & "keys.txt' '" & workFolder & "keys_backup.txt'"
 	set z to do shell script "cp '" & workFolder & "lastupdate.txt' '" & workFolder & "lastupdate_backup.txt'"
@@ -130,11 +140,11 @@ if skipScript is not 1 then
 			set totalitems to item 2 of mystats
 			--reduce chance of annoying error as read/write happens at same time during large library import
 			if totalitems < 200 then
-				delay 1
+				delay 2
 			else if totalitems < 500 then
-				delay 4
+				delay 3
 			else
-				delay 10
+				delay 6
 			end if
 			if currentitem = "Done" then
 				exit repeat
@@ -167,41 +177,84 @@ if skipScript is not 1 then
 	
 end if
 
-tell application id "com.devon-technologies.thinkpro2"
-	activate
-	try
-		--read the file with new entries to be added
-		set filetoread to workFolder & "new.txt"
-		set newEntries to readFile(filetoread) of me
-		--split it into separate lines
-		set entryList to split(newEntries, "
+
+
+
+
+--read the file with new entries to be added
+set filetoread to workFolder & "new.txt"
+
+if existsFile(filetoread) of me is false then
+	--The "new.txt" file could not be found, so nothing to import
+	display dialog "Could not find any downloaded entries. Nothing to import"
+	error number -128
+end if
+
+set newEntries to readFile(filetoread) of me
+--split it into separate lines
+set entryList to split(newEntries, "
 ") of me
-		
-		--add all the attachments and notes last, extract them and add them to end
-		set normalList to {}
-		set endList to {}
-		repeat with newEntry in entryList
-			if word 1 of newEntry is "attachment" or word 1 of newEntry is "note" then
-				set endList to endList & {newEntry}
-			else
-				set normalList to normalList & {newEntry}
-			end if
-		end repeat
-		set sortedList to normalList & endList
-		
-		
-		--cycle through each new entry and add it to DevonThink
-		repeat with newEntry in sortedList
-			set entryData to split(newEntry, "	") of me
-			log entryData
-			set finalTitle to formatTitle(entryData, formatOrder) of me
-			set entryType to item 1 of entryData
-			set entryKey to item 2 of entryData
-			set entryParent to item 5 of entryData
-			set entryAtType to item 6 of entryData
-			set entryURL to item 7 of entryData
+
+if the number of items in entryList < 1 then
+	--There must be at least one entry to import
+	display dialog "Could not find any downloaded entries. Nothing to import"
+	error number -128
+end if
+
+--add all the attachments and notes last, extract them and add them to end
+set normalList to {}
+set endList to {}
+log the number of items in entryList
+tell application "ASObjC Runner"
+	-- set up dialog and show it 
+	reset progress
+	set properties of progress window to {button title:"Cancel", button visible:true, message:"Extracting attachments.", detail:"Putting attachments and notes after all other items before importing into DEVONthink.", indeterminate:true}
+	activate
+	show progress
+end tell
+repeat with newEntry in entryList
+	if newEntry is not "" and the number of words in newEntry > 1 then
+		log newEntry
+		if word 1 of newEntry is "attachment" or word 1 of newEntry is "note" then
+			set endList to endList & {newEntry}
+		else
+			set normalList to normalList & {newEntry}
+		end if
+	end if
+end repeat
+set sortedList to normalList & endList
+
+tell application id "com.devon-technologies.thinkpro2" to activate
+--cycle through each new entry and add it to DevonThink
+tell application "ASObjC Runner"
+	-- set up dialog and show it 
+	reset progress
+	set properties of progress window to {button title:"Cancel", button visible:true, message:"Importing downloaded items into DEVONthink.", detail:"Looking for Zotero items not yet imported.", indeterminate:true}
+	activate
+	show progress
+end tell
+set mycount to 0
+repeat with newEntry in sortedList
+	set mycount to mycount + 1
+	set entryData to split(newEntry, "	") of me
+	log entryData
+	set finalTitle to formatTitle(entryData, formatOrder) of me
+	set entryType to item 1 of entryData
+	set entryKey to item 2 of entryData
+	set entryParent to item 5 of entryData
+	set entryAtType to item 6 of entryData
+	set entryURL to item 7 of entryData
+	tell application "ASObjC Runner"
+		set properties of progress window to {detail:"Adding item: " & mycount & " of " & the number of items in sortedList & ".", indeterminate:false, current value:mycount, max value:the number of items in sortedList}
+		if button was pressed of progress window then
+			set abortmission to true
+			exit repeat
+		end if
+	end tell
+	log finalTitle
+	tell application id "com.devon-technologies.thinkpro2"
+		try
 			set theDatabase to current database
-			log finalTitle
 			if ((entryType is not "attachment") and (entryType is not "note")) then
 				
 				if not (exists record at groupName & finalTitle) then
@@ -267,22 +320,30 @@ tell application id "com.devon-technologies.thinkpro2"
 					end if
 				end if
 			end if
-			
-			--TODO:
-			--ADD LINK TO HEADER TEXT
-			--Allow people to sync only a particular collection
-			
-		end repeat
-	on error error_message number error_number
-		if the error_number is not -128 then display alert "DEVONthink Pro" message error_message as warning
-	end try
+		on error error_message number error_number
+			tell application "ASObjC Runner" to hide progress
+			if the error_number is not -128 then display alert "DEVONthink Pro" message error_message as warning
+		end try
+	end tell
+end repeat
+
+
+tell application "ASObjC Runner"
+	set properties of progress window to {detail:"Import complete. " & mycount & " entries or attachments added."}
+	delay 2
+	hide progress
 end tell
 
-
-if skipScript is not 1 then
-	delay 2
-	tell application "ASObjC Runner" to hide progress
+--Now that import is complete, delete the "new.txt" file
+if existsFile(workFolder & "new.txt") then
+	set y to do shell script "mv '" & workFolder & "new.txt' '" & workFolder & "lastimport.txt'"
+end if
+--Delete the backup files too
+if existsFile(workFolder & "keys_backup.txt") then
 	set y to do shell script "rm '" & workFolder & "keys_backup.txt'"
+end if
+if existsFile(workFolder & "lastupdate_backup.txt") then
 	set z to do shell script "rm '" & workFolder & "lastupdate_backup.txt'"
 end if
+
 
