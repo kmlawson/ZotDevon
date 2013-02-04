@@ -79,6 +79,21 @@ on cleanTitle(theTitle)
 	return returnData
 end cleanTitle
 
+on cleanup(workFolder)
+	--Now that import is complete, delete the "new.txt" file
+	if existsFile(workFolder & "new.txt") then
+		set y to do shell script "mv '" & workFolder & "new.txt' '" & workFolder & "lastimport.txt'"
+	end if
+	--Delete the backup files too
+	if existsFile(workFolder & "keys_backup.txt") then
+		set y to do shell script "rm '" & workFolder & "keys_backup.txt'"
+	end if
+	if existsFile(workFolder & "lastupdate_backup.txt") then
+		set z to do shell script "rm '" & workFolder & "lastupdate_backup.txt'"
+	end if
+	
+end cleanup
+
 
 -- END METHODS -------------------------------------
 ---------------------------------------------------------
@@ -87,6 +102,9 @@ if skipScript is not 1 then
 	--check to see if there is a key and udpate file if there isn't then make an empty one
 	if existsFile(workFolder & "keys.txt") is false then
 		set a to do shell script "touch '" & workFolder & "keys.txt'"
+	end if
+	if existsFile(workFolder & "info.txt") is false then
+		set a to do shell script "touch '" & workFolder & "info.txt'"
 	end if
 	if existsFile(workFolder & "lastupdate.txt") is false then
 		set a to do shell script "touch '" & workFolder & "lastupdate.txt'"
@@ -156,7 +174,7 @@ if skipScript is not 1 then
 				exit repeat
 			end if
 			if totalitems > 0 then
-				set properties of progress window to {detail:"Getting Data: " & currentitem & " of " & totalitems & ".", current value:currentitem, max value:totalitems}
+				set properties of progress window to {detail:"Getting Data: " & currentitem & " of " & totalitems & ".", current value:currentitem, max value:totalitems, indeterminate:false}
 			end if
 			if button was pressed of progress window then
 				set abortmission to true
@@ -183,6 +201,8 @@ if skipScript is not 1 then
 				set properties of progress window to {detail:"No items found."}
 				delay 1
 				hide progress
+				set iamdone to cleanup(workFolder) of me
+				error number -128
 			end if
 		end if
 	end tell
@@ -341,14 +361,5 @@ tell application "ASObjC Runner"
 	hide progress
 end tell
 
---Now that import is complete, delete the "new.txt" file
-if existsFile(workFolder & "new.txt") then
-	set y to do shell script "mv '" & workFolder & "new.txt' '" & workFolder & "lastimport.txt'"
-end if
---Delete the backup files too
-if existsFile(workFolder & "keys_backup.txt") then
-	set y to do shell script "rm '" & workFolder & "keys_backup.txt'"
-end if
-if existsFile(workFolder & "lastupdate_backup.txt") then
-	set z to do shell script "rm '" & workFolder & "lastupdate_backup.txt'"
-end if
+set iamdone to cleanup(workFolder)
+

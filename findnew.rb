@@ -49,6 +49,7 @@ collectionSync=""
 
 
 
+
 if collectionSync!=""
   # We are just getting items from a single collection:
   baseuri="https://api.zotero.org/users/#{userid}/collections/#{collectionSync}/items"
