@@ -9,47 +9,9 @@ include REXML
 
 
 # Some logging if you run the script directly on command line for debugging
-$logging=false
+$logging=true
 
-# -------------------------------------------------------------
-# --  CONFIGURATION FOR YOUR SCRIPT ---------------------------
-
-key='[YOUR KEY]'
-# This is your Zotero access key. You need to get one from Zotero.org so you can remotely access your library via this script
-# https://www.zotero.org/settings/keys
-userid='[YOUR USER ID]'
-# This is your Zotero userID. You can also find it at the /settings/keys link above 
-basepath='[PATH TO ZOTDEVON]' 
-# the path to the location of this script
-# if you are not sure, open Utilities/Terminal, and drag the folder with this script into the window
-# make sure you add the trailing '/'
-local=basepath+"keys.txt"
-# You can probably just leave this alone
-# local list of your Zotero items keys. If you empty that file, it will reimport your entire library
-newDataFile=basepath+"new.txt"
-# You can probably just leave this alone
-# this file is used to temporarily store new Zotero entries that the AppleScript will import into DevonThink
-lastUpdateFile=basepath+'lastupdate.txt'
-# You can probably just leave this alone
-# this notes the time you last synced. A future version of this script may use this for more efficient check of changes
-progressFile=basepath+'info.txt'
-# You can probably just leave this alone
-# this is the "progress" file which is periodically updated as data is downloaded and can be used by the applescript to
-# update the user on the progress of the sync, especially when there are a lot of entries to grab
-collectionSync=""
-# By default, this script will import *all* of your Zotero items. If, instead, you wish to only sync a single collection
-# from your Zotero collection, then put the ID of the collection. To find the collection id, open your Zotero library
-# online, click on the desired collection and look at the URL. You should find the collection id at the end:
-# https://www.zotero.org/[USER]/items/collectionKey/[COLLECTION ID]
-#
-# IMPORTANT NOTE: If you decide to sync only a single collection, rather than your whole library, this script will not
-# as currently written, create references to all the attachments or notes attached to that item. The reason for this is
-# this script looks for all keys in the library or in the collection. Attachmemnts are listed in the list of all keys
-# for the library, but they are not listed when the API looks for all members of a collection. Hopefully someone else can
-# add the ability to recursively add all children of collection items to the loop so they will be added too.
-
-# -- END CONFIGURATION ----------------------------------------
-# -------------------------------------------------------------
+require 'config.rb'
 
 
 if collectionSync!=""
@@ -67,6 +29,10 @@ keyuri="?key=#{key}&format=keys&order=dateModified"
 
 def writeFile(writeData,wFile)
   File.open(wFile,'w') {|f| f.write(writeData)}
+end
+
+def appendFile(writeData,wFile)
+  File.open(wFile,'a') {|f| f.write(writeData)}
 end
 
 def readFile(rFile)
@@ -102,14 +68,17 @@ writeFile("0/0",progressFile)
   begin
     serverKeyList=open(baseuri+keyuri) {|f| f.read}
   rescue OpenURI::HTTPError => errorMsg
-    log("Error loading list of keys on server: #{errorMsg}")
+    seterror="ERROR: Error loading list of keys on server: #{errorMsg}"
+    log(seterror)
+    writeFile(seterror,progressFile)
     checkError(errorMsg.message)
     exit
   end
 
   if serverKeyList=="An error occurred"
-    log("Zotero returned an error. Did you enter the correct key, user id, and collection id?")
-    exit
+    seterror="ERROR: Zotero returned an error. Did you enter the correct key, user id, and collection id?"
+    log(seterror)
+    writeFile(seterror,progressFile)
   end
   # Grabs a list of all the IDs for items in the Zotero database, by datemodified
 
@@ -146,13 +115,16 @@ writeFile("0/0",progressFile)
   missingItems.each {|item|
     mycount+=1
     log("#{mycount}/#{missingItems.count}")
+    log("#{item}")
     writeFile("#{mycount}/#{missingItems.count}",progressFile)
     # record the progress made in downloading data to give feedback to applescript
     # now grab the data for each missing item:
     begin
       itemData=open(itemuri+"/"+item+"?key=#{key}&format=atom") {|f| f.read}
     rescue OpenURI::HTTPError => errorMsg
-      log("Error loading data from item number #{mycount} on server: #{errorMsg}")
+      seterror="Error loading data from item number #{mycount} on server: #{errorMsg}"
+      log(seterror)
+      writeFile(seterror,progressFile)
       checkError(errorMsg.message)
       exit
     end
@@ -188,7 +160,12 @@ writeFile("0/0",progressFile)
         newUp=entries[0].elements.to_a("link")[1].attributes["href"].gsub("https://api.zotero.org/users/#{userid}/items/",'')
         if newType=="attachment"
           # Find out what kind of attachment it is 
-          newAtType=entries[0].elements["content"].elements["div"].elements["table"].elements["tr[@class='mimeType']"].elements["td"].text
+          begin
+            newAtType=entries[0].elements["content"].elements["div"].elements["table"].elements["tr[@class='mimeType']"].elements["td"].text
+          rescue NoMethodError
+            # Some URLs have a URL attachment with no mimeType specified. I have only seen this with URLs so assume type of html/text
+            newAtType="html/text"
+          end
         end
       end
 
@@ -200,17 +177,26 @@ writeFile("0/0",progressFile)
       
       # Put it all together in tab delimited form to put in the new file for the pass-off to the AppleScript
       # 1. TYPE 2. ID 3. TITLE  4. CREATOR SUMMARY  5. PARENT ID  6. ATTACHMENT TYPE  7. URL
-      missingItemData+=newType+"\t"+newID+"\t"+newTitle+"\t"+newCreatorSummary+"\t"+newUp+"\t"+newAtType+"\t"+newURL+"\n"
-        
+      missingItemData=newType+"\t"+newID+"\t"+newTitle+"\t"+newCreatorSummary+"\t"+newUp+"\t"+newAtType+"\t"+newURL+"\n"
+      
+      newIDn=newID+"\n"
+      if mycount==missingItems.count
+        missingItemData.chomp!("\n")
+        newIDn.chomp!
+      end
+      
+      # When we have successfully downloaded data, save it to the new.txt and key.txt so we can restart here if something goes wrong
+      # if ZotDevon.scpt finds a new.txt file that is not empty, it will prompt user to skip findnew.rb and first import downloaded
+      # entries. That way, next import doesn't have to start from the beginning again. Otherwise, they can optionally choose to work from
+      # backup key.txt file.
+      appendFile(missingItemData,newDataFile)
+      appendFile(newIDn,local)
     else
         puts "ERROR: No itemtype found for entry."
     end  
   }
   
   writeFile("Done/#{foundcount}",progressFile)
-  writeFile(missingItemData.chomp,newDataFile)
-  # We are done getting data for missing items, update the key list
-  writeFile(serverKeyList,local)
   # Register the time for this sync
   writeFile(Time.now.to_i,lastUpdateFile)
 

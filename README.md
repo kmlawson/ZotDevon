@@ -33,8 +33,8 @@ Keep in mind this is an early release of this script. Please test it and offer f
 4. Open the ZotDevon.scpt file in AppleScript Editor and configure the script for your machine. Tell it where you put the ZotDevon folder, what folder in DEVONthink you want to import items into, etc.
 5. Login to your Zotero account and [request a key](https://www.zotero.org/settings/keys) so the script can access your library. While you are there, make a note of your "userID"
 6. While you are at Zotero.org, if you want to import/sync only a single collection, navigate to the Zotero collection you wish to import and make a note of the collection ID at the end of the URL.
-7. Now, back on your Mac, open the findnew.rb file in your ZotDevon folder using your favorite text editor (TextWrangler is free, TextEdit will work but don't make it rich text).
-8. Configure the findnew.rb script by modifying the variables at the top. You will be asked to enter the key, the user ID, and if you only want to import a single collection rather than your whole library, the collection ID.
+7. Now, back on your Mac, open the config.rb file in your ZotDevon folder using your favorite text editor (TextWrangler is free, TextEdit will work but don't make it rich text).
+8. Configure the config.rb script by modifying the variables at the top. You will be asked to enter the key, the user ID, and if you only want to import a single collection rather than your whole library, the collection ID.
 9. Make sure your Zotero database is synced with the server.
 10. Back in DEVONthink, make sure the desired database is active, your internet connection is live, and select ZotDevon from the applescript menu. In tests, it takes under 3 hours the first time you import a Zotero library of 2500 items (with 5300 total database items when including attachments).
 
