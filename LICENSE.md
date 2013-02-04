@@ -4,6 +4,8 @@ Enclosed Zotero icons Copyright © 2006, 2007, 2008, 2009, 2010, 2011
 Center for History and New Media, George Mason University
 See enclosed license in /icons/
 
+Other thanks to: Countless posters on Zotero, DEVONthink, and MacScripter forums for snippets, suggestions, and inspiration. 
+
 
 # GNU AFFERO GENERAL PUBLIC LICENSE
 Version 3, 19 November 2007
