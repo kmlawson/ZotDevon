@@ -78,6 +78,10 @@ on cleanTitle(theTitle)
 	return returnData
 end cleanTitle
 
+
+-- END METHODS -------------------------------------
+---------------------------------------------------------
+
 if skipScript is not 1 then
 	--check to see if there is a key and udpate file if there isn't then make an empty one
 	if existsFile(workFolder & "keys.txt") is false then
@@ -116,7 +120,7 @@ if skipScript is not 1 then
 	set z to do shell script "cp '" & workFolder & "lastupdate.txt' '" & workFolder & "lastupdate_backup.txt'"
 	
 	--run ruby script to determine what IDs are missing
-	set x to do shell script "'" & workFolder & "findnew.rb' &> /dev/null 2>&1 &"
+	set x to do shell script "'" & workFolder & "findnew.rb' &"
 	set startstat to split(readFile(workFolder & "info.txt"), "/")
 	set totalitems to item 2 of startstat
 	set abortmission to false
@@ -124,12 +128,13 @@ if skipScript is not 1 then
 	tell application "ASObjC Runner"
 		-- set up dialog and show it 
 		reset progress
-		set properties of progress window to {button title:"Cancel", button visible:true, message:"Checking for new items.", detail:"Looking for Zotero items not yet imported.", indeterminate:false, max value:10, current value:0}
+		set properties of progress window to {button title:"Cancel", button visible:true, message:"Checking for new items.", detail:"Looking for Zotero items not yet imported.", indeterminate:true}
 		activate
 		show progress
 	end tell
 	
 	set isdone to false
+	delay 1
 	
 	--with timeout of 60 seconds
 	repeat while isdone is false
@@ -168,10 +173,16 @@ if skipScript is not 1 then
 		if abortmission is true then
 			set properties of progress window to {detail:"Operation cancelled. DevonThink database not modified."}
 			delay 1
-			tell application "ASObjC Runner" to hide progress
+			hide progress
 			error number -128
 		else
 			set properties of progress window to {detail:"Found " & totalitems & " new items including attachments and notes."}
+			if totalitems is "0" then
+				delay 1
+				set properties of progress window to {detail:"No items found."}
+				delay 1
+				hide progress
+			end if
 		end if
 	end tell
 	
@@ -184,12 +195,6 @@ end if
 --read the file with new entries to be added
 set filetoread to workFolder & "new.txt"
 
-if existsFile(filetoread) of me is false then
-	--The "new.txt" file could not be found, so nothing to import
-	display dialog "Could not find any downloaded entries. Nothing to import"
-	error number -128
-end if
-
 set newEntries to readFile(filetoread) of me
 --split it into separate lines
 set entryList to split(newEntries, "
@@ -198,6 +203,7 @@ set entryList to split(newEntries, "
 if the number of items in entryList < 1 then
 	--There must be at least one entry to import
 	display dialog "Could not find any downloaded entries. Nothing to import"
+	tell application "ASObjC Runner" to hide progress
 	error number -128
 end if
 
@@ -345,5 +351,4 @@ end if
 if existsFile(workFolder & "lastupdate_backup.txt") then
 	set z to do shell script "rm '" & workFolder & "lastupdate_backup.txt'"
 end if
-
 

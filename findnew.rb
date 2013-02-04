@@ -49,7 +49,6 @@ collectionSync=""
 
 
 
-
 if collectionSync!=""
   # We are just getting items from a single collection:
   baseuri="https://api.zotero.org/users/#{userid}/collections/#{collectionSync}/items"
@@ -218,7 +217,7 @@ writeFile("0/0",progressFile)
       newIDn=newID+"\n"
       if mycount==missingItems.count
         missingItemData.chomp!("\n")
-        newIDn.chomp!
+        newIDn
       end
       
       # When we have successfully downloaded data, save it to the new.txt and key.txt so we can restart here if something goes wrong
@@ -232,7 +231,7 @@ writeFile("0/0",progressFile)
     end  
   }
   
-  writeFile("Done/-",progressFile)
+  writeFile("Done/#{missingItems.count}",progressFile)
   # Register the time for this sync
   writeFile(Time.now.to_i,lastUpdateFile)
 
