@@ -22,6 +22,7 @@ This script is not designed to replace your Zotero collection with the same data
 2. ZotDevon does not download and save a copy of attached PDFs or Note files in DEVONthink. When importing the whole library, it creates a simple text file that links to the corresponding item in your local Zotero library.
 3. ZotDevon does not currently create attachment references if you only sync a single collection rather than the whole library. 
 4. ZotDevon does not replicate your collections structure in DEVONthink. 
+5. If you import a single collection it will not look in sub-folders for additional items.
 
 # How to Install
 
@@ -46,7 +47,7 @@ ZotDevon is free and open source. Improvements are welcome.
 
 1. **ZotDevon is slow** - It takes a few minutes to import several hundred new items from a Zotero library, and several hours to import an entire library of several thousand items. An older import script I wrote imported items directly from the local sqlite database at a much faster rate. However, changes in Zotero over time made it hard to maintain this fragile method so I have imported directly from the Zotero Server API instead. The speed of ZotDevon could be *radically* improved if either: a) the Ruby findnew.rb script is rewritten to grab data from 50 items at a time, rather than one at a time. However, this will require a rethinking of the workflow and the checking of missing items. b) Or, the script could be rewritten to interface with the Zotero JavaScript API and communicate directly with the local installation of Zotero, rather than the Server API. 
 2. **Add Support for Attachment References in Collection Sync** - Currently reference files only get created if you sync the entire library. All attachments are grabbed as keys when using the API on the whole library. Attachments are not listed as members when using the API on a specific collection. This could be overcome by changing the loop to grab data from all "children" of each item in a collection.
-3. **Also Import Collection Structure** - ZotDevon could be improved by also grabbing the Zotero collection structure, reproducing this in DEVONthink and replicating each Zotero item into the appropriate folders.
+3. **Also Import Collection Structure** - ZotDevon could be improved by also grabbing the Zotero collection structure, reproducing this in DEVONthink and replicating each Zotero item into the appropriate folders. At the very least, it could handle subfolders when asked to sync a single collection.
 4. **True One-Way Sync** - Currently ZotDevon doesn't look for or deal with deleted items. Nor does it update DEVONthink items to reflect changes in metadata in the titles and authors on the Zotero side. A true sync would look for and deal with changes in a careful manner.
 5. **Add Option to Import Notes and PDFs** - Some users may not wish to keep the data in one place and wish instead to move a copy of all PDFs and Notes into DEVONthink. Providing this option would make ZotDevon into a true full import script. Notes in Zotero are in HTML format, but DEVONthink has a "get rich text" of applescript support which can essentially convert an HTML file into rich text. Support for this could be added when importing Notes.
 6. **Add Formatted Bibliographic Entry** - ZotDevon could be improved to produce a nice formated bibliographic entry in a desired format in the notes file created for each entry in DEVONthink.
@@ -66,4 +67,10 @@ Delete or move the imported folders in DEVONthink, and then empty the "keys.txt"
 **I See Weird Behavior After Canceling and Restarting ZotDevon**
 
 Currently ZotDevon has an AppleScript which calls a Ruby script. When the AppleScript is cancelled before import is complete, the Ruby script findnew.rb continue to download the updates. The script should ideally be improved to keep track of the process number of the launched Ruby script and shut it down in event of cancellation. Until this is incorporated, you will need to either wait for the import script to complete of its own accord before restarting, or open Activity Monitor, search for Ruby and force quit the ruby script running. If there are multiple ruby scripts running on your computer, inspect the process to determine what is what. 
+
+**How Do I Start Over If Something Goes Wrong?**
+
+If there are problems with the import first try running the script again. It could be that the download from zotero.org failed for some reason and the script may have a partially downloaded copy of your database that it can start from again.
+
+If you want to start completely over, delete the keys.txt, and if you see it, the new.txt and any _backup.txt files in your ZotDevon folder. Then run the script again.
 
