@@ -1,3 +1,4 @@
+--VERSION: 1.0.1
 --Location of this script and its work files:
 set workFolder to "/Users/[your user]/[path to ZotDevon]"
 --The name of the group in DevonThink where you wish to create folders/notes:
@@ -120,7 +121,7 @@ if skipScript is not 1 then
 	set z to do shell script "cp '" & workFolder & "lastupdate.txt' '" & workFolder & "lastupdate_backup.txt'"
 	
 	--run ruby script to determine what IDs are missing
-	set x to do shell script "'" & workFolder & "findnew.rb' &"
+	set x to do shell script "'" & workFolder & "findnew.rb' > /dev/null 2>&1 & "
 	set startstat to split(readFile(workFolder & "info.txt"), "/")
 	set totalitems to item 2 of startstat
 	set abortmission to false
@@ -351,4 +352,3 @@ end if
 if existsFile(workFolder & "lastupdate_backup.txt") then
 	set z to do shell script "rm '" & workFolder & "lastupdate_backup.txt'"
 end if
-
