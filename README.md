@@ -1,6 +1,8 @@
 ZotDevon
 ========
 
+NOTE: Several reports have come in suggesting that ZotDevon is no longer functional. I would welcome rewrites of this script. I will not be developing this further at this time.
+
 Script for one-way import of a Zotero library into DEVONthink. 
 
 # What ZotDevon Does
